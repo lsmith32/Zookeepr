@@ -1,14 +1,14 @@
-const express = require('express');
-const app = express();
-// parse incoming string or array data
-app.use(express.urlencoded({ extended: true }));
-// parse incoming JSON data
-app.use(express.json());
-
-const PORT = process.env.PORT || 3001;
-const { animals } = require('./data/animals');
 const fs = require('fs');
 const path = require('path');
+const express = require('express');
+const { animals } = require('./data/animals');
+
+const PORT = process.env.PORT || 3001;
+const app = express();
+
+app.use(express.static('public'));
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
 function filterByQuery(query, animalsArray) {
     let personalityTraitsArray = [];
@@ -50,10 +50,10 @@ function filterByQuery(query, animalsArray) {
   }
 
   function findById(id, animalsArray) {
-      const result = animalsArray.filter(animal => animal.id === id)[0];
-      return result;
-  };
-
+    const result = animalsArray.filter(animal => animal.id === id)[0];
+    return result;
+  }
+  
   function createNewAnimal(body, animalsArray) {
     const animal = body;
     animalsArray.push(animal);
@@ -63,7 +63,7 @@ function filterByQuery(query, animalsArray) {
     );
     return animal;
   }
-
+  
   function validateAnimal(animal) {
     if (!animal.name || typeof animal.name !== 'string') {
       return false;
@@ -79,7 +79,7 @@ function filterByQuery(query, animalsArray) {
     }
     return true;
   }
-
+  
   app.get('/api/animals', (req, res) => {
     let results = animals;
     if (req.query) {
@@ -87,14 +87,14 @@ function filterByQuery(query, animalsArray) {
     }
     res.json(results);
   });
-
-  app.get('/api/animals/:id', (req,res) => {
-      const result = findById(req.params.id, animals);
-      if (result) {
-          res.json(result);
-      } else {
-          res.send(404);
-      }
+  
+  app.get('/api/animals/:id', (req, res) => {
+    const result = findById(req.params.id, animals);
+    if (result) {
+      res.json(result);
+    } else {
+      res.send(404);
+    }
   });
 
   app.post('/api/animals', (req, res) => {
@@ -103,13 +103,29 @@ function filterByQuery(query, animalsArray) {
   
     // if any data in req.body is incorrect, send 400 error back
     if (!validateAnimal(req.body)) {
-      res.status(400).send('The animal is not properly formatted.');
-    } else {
-      const animal = createNewAnimal(req.body, animals);
-      res.json(animal);
-    }
-  });
-
-  app.listen(PORT, () => {
-    console.log(`API server now on port ${PORT}!`);
-  });
+        res.status(400).send('The animal is not properly formatted.');
+      } else {
+        const animal = createNewAnimal(req.body, animals);
+        res.json(animal);
+      }
+    });
+    
+    app.get('/', (req, res) => {
+      res.sendFile(path.join(__dirname, './public/index.html'));
+    });
+    
+    app.get('/animals', (req, res) => {
+      res.sendFile(path.join(__dirname, './public/animals.html'));
+    });
+    
+    app.get('/zookeepers', (req, res) => {
+      res.sendFile(path.join(__dirname, './public/zookeepers.html'));
+    });
+    
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(__dirname, './public/index.html'));
+    });
+    
+    app.listen(PORT, () => {
+      console.log(`API server now on port ${PORT}!`);
+    });
